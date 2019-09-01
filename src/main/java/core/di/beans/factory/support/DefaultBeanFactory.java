@@ -46,10 +46,12 @@ public class DefaultBeanFactory implements BeanDefinitionRegistry, ConfigurableL
         }
 
         BeanDefinition beanDefinition = beanDefinitions.get(clazz);
-        if (beanDefinition != null && beanDefinition instanceof AnnotatedBeanDefinition) {
+        if (beanDefinition instanceof AnnotatedBeanDefinition) {
             Optional<Object> optionalBean = createAnnotatedBean(beanDefinition);
-            optionalBean.ifPresent(b -> beans.put(clazz, b));
-            initialize(bean, clazz);
+            optionalBean.ifPresent(b -> {
+                beans.put(clazz, b);
+                initialize(b, clazz);
+            });
             return (T) optionalBean.orElse(null);
         }
 
@@ -60,7 +62,8 @@ public class DefaultBeanFactory implements BeanDefinitionRegistry, ConfigurableL
 
         beanDefinition = beanDefinitions.get(concreteClazz.get());
         log.debug("BeanDefinition : {}", beanDefinition);
-        bean = inject(beanDefinition);
+//        bean = inject(beanDefinition);
+        bean = injectProxy(beanDefinition);
         beans.put(concreteClazz.get(), bean);
         initialize(bean, concreteClazz.get());
         return (T) bean;
@@ -95,6 +98,22 @@ public class DefaultBeanFactory implements BeanDefinitionRegistry, ConfigurableL
             args.add(getBean(param));
         }
         return args.toArray();
+    }
+
+    private Object injectProxy(BeanDefinition beanDefinition) {
+        final Object object = inject(beanDefinition);
+
+        try {
+            if (object instanceof FactoryBean) {
+                FactoryBean factoryBean = (FactoryBean) object;
+                return factoryBean.getObject();
+            }
+
+            return object;
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            return null;
+        }
     }
 
     private Object inject(BeanDefinition beanDefinition) {

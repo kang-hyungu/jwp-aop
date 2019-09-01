@@ -20,11 +20,11 @@ public class AnnotationConfigApplicationContext implements ApplicationContext {
     private DefaultBeanFactory beanFactory;
 
     public AnnotationConfigApplicationContext(Class<?>... annotatedClasses) {
-        Object[] basePackages = findBasePackages(annotatedClasses);
         beanFactory = new DefaultBeanFactory();
         BeanDefinitionReader abdr = new AnnotatedBeanDefinitionReader(beanFactory);
         abdr.loadBeanDefinitions(annotatedClasses);
 
+        Object[] basePackages = findBasePackages(annotatedClasses);
         if (basePackages.length > 0) {
             ClasspathBeanDefinitionScanner scanner = new ClasspathBeanDefinitionScanner(beanFactory);
             scanner.doScan(basePackages);
